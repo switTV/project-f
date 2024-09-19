@@ -3,6 +3,8 @@ import { expressjwt } from "express-jwt";
 function authJwt() {
     const secret = process.env.JWT_KEY;
     const api = process.env.API_URL;
+
+    console.log(process.env.API_URL)
     
     return expressjwt({
         secret,

@@ -1,6 +1,10 @@
 import express from "express"
 import mongoose from  "mongoose"
 import dotenv from "dotenv"
+import cookieParser from "cookie-parser";
+
+
+import cors from 'cors';
 
 import authJwt from "./utils/jwt.js"
 
@@ -14,6 +18,13 @@ const port = 3000
 
 app.use(express.json())
 app.use(authJwt());
+app.use(cookieParser())
+
+app.use(cors({
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
 
 // routes
 app.use(userRoutes)

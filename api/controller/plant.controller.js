@@ -12,12 +12,12 @@ export const getUsersPlants = async(req, res) => {
         const user = await User.findById(req.body.userId).populate('userPlants');
 
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ errorMessage: 'User not found' });
         }
 
         res.status(200).json(user.userPlants);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ errorMessage: err.message });
     }
 }
 

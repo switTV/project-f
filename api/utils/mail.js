@@ -35,3 +35,14 @@ export const sendVerificationMail = (mail, code) => {
 
     return verificationMail.send(verificationMail)
 }
+
+export const sendMail = (mail, subject, text) => {
+    const userMail = new Mail(
+        process.env.GMAIL_USER, // flora mail
+        mail, // user mail
+        subject, // subject
+        text // text
+    )
+
+    return userMail.send(userMail)
+}
