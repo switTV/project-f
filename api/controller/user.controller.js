@@ -13,6 +13,23 @@ export const getUsers = async (req, res) => {
     }
 }
 
+export const getUser = async (req, res) => {
+    const { id } = req.params
+    
+    try {
+        const user = await User.find({ _id: id })
+
+        if(!user) {
+            return res.status(404).json({ errorMessage: "Usuario no encontrado, no deberias estar viendo esto /;" });
+        }
+
+        console.log(user)
+        res.send(user)
+    } catch (err) {
+        return res.status(500).json({ errorMessage: err.message });
+    }
+}
+
 export const registerUser = (req, res) => {
     const user = new User({
         name: req.body.name,
@@ -99,7 +116,6 @@ export const verifyCode = async (req, res) => {
             secure: false,
             maxAge: 1000 * 60 * 60 * 24 * 30
         });
-        
         
 
         return res.status(200).json({ errorMessage: "Código verificado con éxito!", token });

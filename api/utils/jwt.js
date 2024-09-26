@@ -21,10 +21,6 @@ function authJwt() {
 }
 
 async function isRevoked(req, jwt) {
-    const payload = jwt.payload;
-    if (!payload.isAdmin) {
-        return true;
-    }
     return false;
 }
 
