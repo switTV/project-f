@@ -1,4 +1,6 @@
+import { verifyAuthToken } from '$lib/func/verifyAuthToken.js';
 import { redirect } from '@sveltejs/kit';
+
 let errorMessage = ""
 
 export const load = async ({ cookies, url }) => {
@@ -9,31 +11,32 @@ export const load = async ({ cookies, url }) => {
     }
 
     try {
-        const verifyResponse = await fetch("http://localhost:3000/api/v1/garden", {
-            method: "GET",
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-            }
-        })
+        const { authStatus, userInfo } = await fetchUserSession(authToken)
 
-        if (!verifyResponse.ok) {
-            errorMessage = `Error: ${verifyResponse.statusText}`
-            console.log(`error ${verifyResponse.status} ${verifyResponse.redirected}`)
+        if (!authStatus) {
+            return { errorMessage };
         }
-        
-        const verifyResult = await verifyResponse.json();
-        const userInfo = await getUserData(verifyResult.user.id, authToken);
-        
-        return { verifyResult, userInfo }
 
+        return { authStatus, userInfo }
     } catch (error) {
-        errorMessage = `Error del servidor`
-        return {errorMessage}
+
     }
+
 };
 
+const fetchUserSession = async (authToken: any) => {
+    try {
+        const authStatus = await verifyAuthToken(authToken)
+        const userInfo = await fetchUserData(authStatus?.verifyResult.user.id, authToken);
 
-const getUserData = async(id, authToken) => {
+        return { authStatus, userInfo }
+
+    } catch (error) {
+        return { error }
+    }
+}
+
+const fetchUserData = async (id: number, authToken: any) => {
     try {
         const userResponse = await fetch(`http://localhost:3000/api/v1/users/${id}`, {
             method: "GET",
@@ -51,6 +54,6 @@ const getUserData = async(id, authToken) => {
         return { userResult }
     } catch (error) {
         errorMessage = `Error del servidor: ${error}`
-        return {errorMessage}
+        return { errorMessage }
     }
 }

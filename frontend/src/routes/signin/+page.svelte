@@ -1,14 +1,16 @@
 <script>
     import VerificationCode from "$lib/components/utils/VerificationCode.svelte";
+    import { ErrorFH } from "$lib/classes/errorClass";
 
     let mail = "";
     let password = "";
     let message = "";
+    let sessionError = null
     let showVerifyModule = false;
 
-    const signin = async () => {
+    const signin = async() => {
         try {
-            const response = await fetch("http://localhost:3000/api/v1/users/login",
+            const signInResponse = await fetch("http://localhost:3000/api/v1/users/login",
                 {
                     method: "POST",
                     headers: {
@@ -18,14 +20,18 @@
                 },
             );
 
-            const result = await response.json();
+            const signInResult = await signInResponse.json();
 
-            if (!response.ok) {
-                message = result.errorMessage;
-            } else {
-                message = result;
+            if (!signInResponse.ok) {
+                sessionError = new ErrorFH(signInResult.errorType, signInResult.errorMessage)
+                sessionError.logError()
+                return sessionError
+            } 
+            else {
+                message = signInResult;
                 showVerifyModule = true;
             }
+
         } catch (err) {
             console.error(err);
         }
@@ -60,11 +66,22 @@
         font-weight: 700;
     }
 
+    .form {
+        margin-bottom: 20px;
+    }
+
+    .error {
+        color: #d82929;
+        font-family: "Oxygen", sans-serif;
+        font-size: 12px;
+
+        margin-top: 1.5px;
+    }
+
     input {
         height: 50px;
         width: 100%;
 
-        margin-bottom: 20px;
         padding-left: 5px;
 
         border: #345511 2px solid;
@@ -113,18 +130,27 @@
         <h2>Sign in</h2>
 
         <form method="post" on:submit|preventDefault={signin} action="signin">
-            <label for="userEmail">Email</label>
-            <div class="input_container_mail">
-                <input bind:value={mail} type="text" name="userEmail" />
+            <div class="form form1">
+                <label for="userEmail">Email</label>
+                <div class="input_container_mail">
+                    <input bind:value={ mail } type="text" name="userEmail" />
+                </div>
+                {#if sessionError?.errorType == "Mail"}
+                    <p class="error">{sessionError.errorMessage}</p>
+                {/if}
             </div>
-
-            <label for="password">Password</label>
-            <div class="input_container_password">
-                <input
-                    bind:value={password}
-                    type="password"
-                    name="userPassword"
-                />
+            <div class="form form2">
+                <label for="password">Password</label>
+                <div class="input_container_password">
+                    <input
+                        bind:value={ password }
+                        type="password"
+                        name="userPassword"
+                    />
+                </div>
+                {#if sessionError?.errorType == "Password"}
+                    <p class="error">{sessionError.errorMessage}</p>
+                {/if}
             </div>
 
             <button type="submit">Sign in</button>

@@ -1,6 +1,7 @@
 <script lang="ts">
     import VerificationCode from "$lib/components/utils/VerificationCode.svelte";
-    import { validateEmail } from "$lib/func/mailValidator";
+    import { ErrorFH } from "$lib/classes/errorClass";
+
 
     let name = "";
     let mail = "";
@@ -8,27 +9,26 @@
     let passwordHash = "";
     let passwordRepeat = "";
 
-    let message = "";
+    let sessionMessage = "";
+    let sessionError=null;
 
     let showVerifyModule = false;
 
     const signupUser = async () => {
-        if (name.length < 2 && name.length >= 16) {
-            message = "Intenta con otro nombre";
-            return;
-        } else if (!validateEmail(mail)) {
-            message = "Por favor, ingrese un correo electrónico válido";
-            return;
-        } else if (passwordHash.length < 8) {
-            message = "La contraseña debe tener minimo 8 caracteres";
-            return;
-        } else if (passwordHash !== passwordRepeat) {
-            message = "Las contraseñas no coinciden";
-            return;
+        if (passwordHash !== passwordRepeat) {
+            sessionError = new ErrorFH(
+                "Password",
+                "Las contraseñas no coinciden.",
+            );
+            return sessionError;
+        }
+        else {
+            sessionError = null
         }
 
         try {
-            const registrationResponse = await fetch("http://localhost:3000/api/v1/users/register",
+            const registrationResponse = await fetch(
+                "http://localhost:3000/api/v1/users/register",
                 {
                     method: "POST",
                     headers: {
@@ -41,16 +41,16 @@
             const registrationResult = await registrationResponse.json();
 
             if (!registrationResponse.ok) {
-                const duplicatedKeys = Object.keys(
-                    registrationResult.keyPattern,
-                );
+                console.log(registrationResponse)
+                sessionError = new ErrorFH(registrationResult.errorType, registrationResult.errorMessage)
+                return sessionError
 
-                message = `El "${duplicatedKeys}" ya esta en uso`;
             } else {
-                message = `Tu cuenta ha sido creada con exito`;
+                sessionMessage = `Tú cuenta ha sido creada con éxito`;
                 showVerifyModule = true;
 
-                const loginResponse = await fetch("http://localhost:3000/api/v1/users/login",
+                const loginResponse = await fetch(
+                    "http://localhost:3000/api/v1/users/login",
                     {
                         method: "POST",
                         headers: {
@@ -68,6 +68,96 @@
         }
     };
 </script>
+
+<!-- markup (zero or more items) goes here -->
+
+<div class="container">
+    <div class="signup_container">
+        <h2>Register</h2>
+        <form
+            on:submit|preventDefault={signupUser}
+            method="post"
+            action="http://localhost:3000/api/users/register"
+        >
+            <div class="form form1">
+                <label for="userName">Name</label>
+                <input
+                    id="name"
+                    bind:value={name}
+                    type="text"
+                    name="name"
+                    placeholder="Pon tú nombre aquí."
+                    required
+                />
+                {#if sessionError?.errorType == "Name"}
+                    <p class="error">{sessionError.getErrorMessage()}</p>
+                {/if}
+            </div>
+
+            <div class="form form2">
+                <label for="userEmail">Email</label>
+                <div class="input_container_mail">
+                    <input
+                        id="email"
+                        bind:value={mail}
+                        type="text"
+                        name="mail"
+                        placeholder="Pon tú mail aquí."
+                        required
+                    />
+                    {#if sessionError?.errorType == "Mail"}
+                        <p class="error">{sessionError.getErrorMessage()}</p>
+                    {/if}
+                </div>
+            </div>
+
+            <div class="form form3">
+                <label for="password">Password</label>
+                <div class="input_container_password">
+                    <input
+                        id="password"
+                        bind:value={passwordHash}
+                        type="password"
+                        name="passwordHash"
+                        placeholder="Pon tú contraseña aquí."
+                        required
+                    />
+                </div>
+                {#if sessionError?.errorType == "Password"}
+                    <p class="error">{sessionError.getErrorMessage()}</p>
+                {/if}
+            </div>
+
+            <div class="form form4">
+                <label for="passwordRepeat">Repeat Password</label>
+                <div class="input_container_password">
+                    <input
+                        id="passwordRepeat"
+                        bind:value={passwordRepeat}
+                        type="password"
+                        name="passwordRepeat"
+                        placeholder="Repite tú contraseña aquí."
+                        required
+                    />
+                    {#if sessionError?.errorType == "Password"}
+                        <div>
+                            <p class="error">{sessionError.getErrorMessage()}</p>
+                        </div>
+                    {/if}
+                </div>
+            </div>
+
+            <button type="submit">Register</button>
+        </form>
+        {#if sessionMessage}
+            <p>{sessionMessage}</p>
+        {/if}
+
+        {#if showVerifyModule}
+            <VerificationCode userData={{ mail }}></VerificationCode>
+        {/if}
+    </div>
+</div>
 
 <style>
     .container {
@@ -94,6 +184,17 @@
         font-family: "Lora", sans-serif;
     }
 
+    .form {
+        margin-bottom: 20px;
+    }
+    .error {
+        color: #d82929;
+        font-family: "Oxygen", sans-serif;
+        font-size: 12px;
+
+        margin-top: 1.5px;
+    }
+
     label {
         font-family: "Nunito sans", sans-serif;
         font-weight: 700;
@@ -103,11 +204,12 @@
         height: 50px;
         width: 100%;
 
-        margin-bottom: 20px;
         padding-left: 5px;
 
         border: #345511 2px solid;
         border-radius: 5px;
+
+        font-family: "Oxygen", sans-serif;
     }
 
     .signup_container form input:nth-child(3) {
@@ -144,68 +246,3 @@
         font-size: 16px;
     }
 </style>
-
-
-<!-- markup (zero or more items) goes here -->
-
-<div class="container">
-    <div class="signup_container">
-        <h2>Register</h2>
-        <form
-            on:submit|preventDefault={signupUser}
-            method="post"
-            action="http://localhost:3000/api/users/register"
-        >
-            <label for="userName">Name</label>
-            <input
-                id="name"
-                bind:value={name}
-                type="text"
-                name="name"
-                required
-            />
-
-            <label for="userEmail">Email</label>
-            <div class="input_container_mail">
-                <input
-                    id="email"
-                    bind:value={mail}
-                    type="text"
-                    name="mail"
-                    required
-                />
-            </div>
-
-            <label for="password">Password</label>
-            <div class="input_container_password">
-                <input
-                    id="password"
-                    bind:value={passwordHash}
-                    type="password"
-                    name="passwordHash"
-                    required
-                />
-            </div>
-
-            <label for="passwordRepeat">Repeat Password</label>
-            <div class="input_container_password">
-                <input
-                    id="passwordRepeat"
-                    bind:value={passwordRepeat}
-                    type="password"
-                    name="passwordRepeat"
-                    required
-                />
-            </div>
-
-            <button type="submit">Register</button>
-        </form>
-        {#if message}
-            <p>{message}</p>
-        {/if}
-
-        {#if showVerifyModule}
-            <VerificationCode userData={{ mail }}></VerificationCode>
-        {/if}
-    </div>
-</div>

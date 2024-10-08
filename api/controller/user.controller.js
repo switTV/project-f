@@ -1,4 +1,6 @@
 import { sendVerificationMail, sendMail } from "../utils/mail.js";
+import { validateEmail } from "../utils/mailValidator.js";
+
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import { User } from "../models/user.model.js";
@@ -9,7 +11,7 @@ export const getUsers = async (req, res) => {
 
         res.send(user)
     } catch (error) {
-        console.log(error)
+        console.error(error)
     }
 }
 
@@ -23,31 +25,59 @@ export const getUser = async (req, res) => {
             return res.status(404).json({ errorMessage: "Usuario no encontrado, no deberias estar viendo esto /;" });
         }
 
-        console.log(user)
         res.send(user)
     } catch (err) {
         return res.status(500).json({ errorMessage: err.message });
     }
 }
 
-export const registerUser = (req, res) => {
-    const user = new User({
-        name: req.body.name,
-        mail: req.body.mail,
-        passwordHash: bcrypt.hashSync(req.body.passwordHash, 10)
-    })
+export const registerUser = async(req, res) => {
+    try {
+        //AUTH VERIFIER ------------------------------------------------------------------------------------------------------------
+        if (req.body.name == "" || req.body.mail == "" || req.body.passwordHash == "") {
+            return res.status(400).json({ errorMessage: "Rellena los formularios", errorType: "Global" })
+        }
+    
+        else if (req.body.name.length < 2 || req.body.name.length >= 16) {
+            return res.status(400).json({ errorMessage: "El nombre debe tener entre 2 y 16 caracteres.", errorType: "Name" })
+        }
+    
+        else if (!validateEmail(req.body.mail)) {
+            return res.status(400).json({ errorMessage: "Por favor, ingrese un mail valído.", errorType: "Mail" })
+        }
+    
+        else if (req.body.passwordHash.length < 8) {
+            return res.status(400).json({ errorMessage: "La contraseña debe tener mas de 8 caracteres", errorType: "Password" })
+        }
 
-    if (req.body.name == "" || req.body.mail == "" || req.body.passwordHash == "") {
-        return res.status(400).json({ errorMessage: "Rellena los formularios" })
+        const existingUser = await User.findOne({ $or: [{ mail: req.body.mail }, { name: req.body.name }] });
+
+        if (existingUser) {
+            if (existingUser.mail === req.body.mail) {
+                return res.status(400).json({ errorMessage: "El correo ya está en uso.", errorType: "Mail" });
+            } else if (existingUser.name === req.body.name) {
+                return res.status(400).json({ errorMessage: "El nombre ya está en uso.", errorType: "Name" });
+            }
+        }
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        const user = new User({
+            name: req.body.name,
+            mail: req.body.mail,
+            passwordHash: bcrypt.hashSync(req.body.passwordHash, 10)
+        })
+    
+        user.save()
+            .then(createdUser => {
+                res.status(200).json(createdUser)
+            })
+            .catch((err) => {
+                res.status(400).json(err)
+            })
+    } catch (err) {
+        console.error(err)
     }
-
-    user.save()
-        .then(createdUser => {
-            res.status(200).json(createdUser)
-        })
-        .catch((err) => {
-            res.status(400).json(err)
-        })
+    
 }
 
 export const loginUser = async (req, res) => {
@@ -57,7 +87,7 @@ export const loginUser = async (req, res) => {
         const searchedUser = await User.findOne({ mail });
 
         if (!searchedUser) {
-            return res.status(400).json({ errorMessage: "El mail no es correcto." });
+            return res.status(400).json({ errorMessage: "El mail no es correcto.", errorType: "Mail" });
         }
 
         if (searchedUser && bcrypt.compareSync(password, searchedUser.passwordHash)) {
@@ -70,12 +100,12 @@ export const loginUser = async (req, res) => {
             await searchedUser.save();
 
             sendVerificationMail(mail, code);
-            res.json("Te enviamos un codigo de verificación")
+            res.json("Te enviamos un codigo de verificación.")
         } else {
-            return res.status(400).json({ errorMessage: "La contraseña parece no ser correcta." })
+            return res.status(400).json({ errorMessage: "La contraseña parece no ser correcta.", errorType: "Password" })
         }
     } catch (error) {
-        console.log(error)
+        console.error(error)
     }
 }
 
@@ -98,10 +128,20 @@ export const verifyCode = async (req, res) => {
         }
 
         if (Date.now() > searchedUser.verificationCodeExpires) {
-            return res.status(400).json({ errorMessage: "El código de verificación ha expirado." });
+            if (searchedUser.wasLogged == false) {
+                try {
+                    await User.findByIdAndDelete(searchedUser._id);
+                    return res.status(400).json({ errorMessage: "El código de verificación ha expirado, el usuario ha sido eliminado." });
+                } catch (error) {
+                    return res.status(500).json({ errorMessage: "Ocurrió un error al intentar eliminar el usuario." });
+                }
+            }
+            else {
+                return res.status(400).json({ errorMessage: "El código de verificación ha expirado, intentalo de nuevo." });
+            }
         }
 
-        if (searchedUser.verificationCode !== code) {
+        if (searchedUser.verificationCode !== code.toUpperCase()) {
             return res.status(400).json({ errorMessage: "El código de verificación es incorrecto." });
         }
 
@@ -109,6 +149,7 @@ export const verifyCode = async (req, res) => {
 
         searchedUser.verificationCode = null;
         searchedUser.verificationCodeExpires = null;
+        searchedUser.wasLogged = true
         await searchedUser.save();
         
         res.cookie('authToken', token, {

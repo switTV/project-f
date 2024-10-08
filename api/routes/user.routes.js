@@ -1,5 +1,6 @@
 import express from "express"
 import { getUsers, loginUser, registerUser, verifyCode, getUser } from "../controller/user.controller.js"
+
 const api = process.env.API_URL;
 
 const router = express.Router()

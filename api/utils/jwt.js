@@ -1,4 +1,5 @@
 import { expressjwt } from "express-jwt";
+import { User } from "../models/user.model.js";
 
 function authJwt() {
     const secret = process.env.JWT_KEY;
@@ -21,6 +22,10 @@ function authJwt() {
 }
 
 async function isRevoked(req, jwt) {
+    const user = await User.findById(jwt.payload.id);
+    if (!user || !user.wasLogged) {
+        return true;
+    }
     return false;
 }
 
