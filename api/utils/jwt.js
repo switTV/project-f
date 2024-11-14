@@ -4,8 +4,6 @@ import { User } from "../models/user.model.js";
 function authJwt() {
     const secret = process.env.JWT_KEY;
     const api = process.env.API_URL;
-
-    console.log(process.env.API_URL)
     
     return expressjwt({
         secret,
@@ -17,6 +15,7 @@ function authJwt() {
             `${api}/users/login`,
             `${api}/users/register`,
             `${api}/users/verifycode`,
+            `${api}/uploads`,
         ]
     });
 }

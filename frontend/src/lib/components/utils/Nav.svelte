@@ -1,9 +1,9 @@
-<script>
+<script lang="ts">
     import { goto } from "$app/navigation";
     export let signedIn
 
-    function navHome() {
-        goto("/")
+    function navHome(home:string) {
+        goto(`/${home}`)
     }
 </script>
 
@@ -69,7 +69,7 @@
     {#if signedIn == false}
         <div class="Nav_container">
             <div class="Nav_container_logo">
-                <h2 on:click={navHome}>AIplant</h2>
+                <h2 on:click={()=>(navHome(""))}>AIplant</h2>
             </div>
             <div class="Nav_container_buttons">
                 <a href="/signin" class="signIn">Sign in</a>
@@ -81,7 +81,7 @@
 
         <div class="Nav_container2">
             <div class="Nav_container_logo2">
-                <h2 on:click={navHome}>AIplant</h2>
+                <h2 on:click={()=>(navHome("garden"))}>AIplant</h2>
             </div>
         </div>
     {/if}

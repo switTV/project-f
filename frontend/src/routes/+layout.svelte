@@ -3,8 +3,6 @@
     import Nav from "$lib/components/utils/Nav.svelte";
     
     export let data: LayoutData;
-
-    console.log(data)
 </script>
 
 <style>

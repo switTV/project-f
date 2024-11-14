@@ -1,5 +1,6 @@
 import express from "express"
 import mongoose from  "mongoose"
+import path from "path"
 import dotenv from "dotenv"
 import cookieParser from "cookie-parser";
 
@@ -29,6 +30,8 @@ app.use(cors({
 // routes
 app.use(userRoutes)
 app.use(plantRoutes)
+app.use('/api/uploads', express.static('uploads'));
+
 
 
 mongoose.connect(process.env.MONGO_STRING, {
