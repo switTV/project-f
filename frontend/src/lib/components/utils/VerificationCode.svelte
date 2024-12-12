@@ -41,7 +41,7 @@
         height: 91vh;
 
         position: absolute;
-        top: 0;
+        top: 9vh;
         left: 0;
 
         display: flex;
@@ -53,17 +53,42 @@
         width: 90%;
         height: auto;
 
-        background-color: #4FB477;
+        background-color: #ffffff;
+        border: 2px solid #000;
         
-        border-radius: 10px;
+        border-radius: 5px;
         
         padding: 10px;
         position: absolute;
         z-index: 2;
     }
 
+    .VerificationCode_content h2 {
+        font-family: "Lora", sans-serif;
+        margin-bottom: 5px;
+    }
+
+    .VerificationCode_content p{
+        font-family: 'Oxygen', sans-serif;
+    }
+
     .VerificationCode_content header {
         margin-bottom: 20px;
+    }
+
+    #vCode {
+        border: none;
+        outline: none;
+
+        color: #4fb477;        
+
+        border-bottom: #8f8c8c 2px solid;
+        width: 100%;
+        text-align: center;
+
+        font-family: "Lora", sans-serif;
+        font-size: 24px;
+        font-weight: 700;
     }
 
     .overlay {
@@ -73,6 +98,32 @@
 
         backdrop-filter: blur(4px);
         z-index: 1;
+    }
+
+    .footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 15px 0px;
+    }
+
+    button {
+        width: 100px;
+        height: 30px;
+
+        border: none;
+        border-radius: 2.5px;
+
+        font-size: 16px;
+        font-family: "Oxygen", sans-serif;
+        
+        outline: #3ce07e;
+
+        background-color: #4fb477;
+    }
+
+    .errorMsg {
+        color: #d82626;
     }
 </style>
 
@@ -101,14 +152,22 @@
                     bind:value={code}
                     type="text"
                     name="verificationCode"
-                    placeholder="Pon tu codigo por aquí"
                     required
                     id="vCode"
+                    autofocus
+                    maxlength="4"
                 />
-                <button type="submit">Verificar</button>
+                <div class="footer">
+                    <div class="footer_left">
+                        <button type="submit">Verificar</button>
+                    </div>
+                    <div class="footer_right">
+                        <a href="#">Resend; falta terminar esto!!!</a>
+                    </div>
+                </div>
             </form>
             {#if message}
-                <p>{message}</p>
+                <p class="errorMsg">{message}</p>
             {/if}
         </body>
     </div>

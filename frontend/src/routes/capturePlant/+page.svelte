@@ -1,7 +1,10 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import type { PageData } from './$types';
+    import { goto } from "$app/navigation";
     export let data: PageData;
+
+    import Loader from "$lib/components/utils/Loader.svelte";
 
 
     let videoElement: HTMLVideoElement;
@@ -12,6 +15,32 @@
     let stream: MediaStream;
 
     let photoTaken = false;
+    let loadState = true
+
+    async function deletePlant(plantId:string, redirectUrl:string) {
+        let userId = data.authStatus?.verifyResult.user.id
+
+        try {
+            const deleteRequest = await fetch("http://localhost:3000/api/v1/plants", {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${data.authToken}`
+                },
+
+                body: JSON.stringify({ userId, plantId })
+            })
+
+            goto(redirectUrl)
+
+            const deleteResponse = await deleteRequest.json()
+            return deleteResponse
+
+            
+        } catch (error) {
+            throw new Error(`${error}`)
+        }
+    }
 
     onMount(() => {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -117,9 +146,15 @@
                 },
                 body: formData,
             })
-            console.log(imageBlob)
-
+            
             const plantResult = await plantResponse.json()
+            loadState = false
+            if (plantResult.plant.nombre_comun === "Desconocido") {
+                deletePlant(plantResult.plant._id, `http://localhost:5173/garden/non-recognized`)
+            }
+            else {
+                goto(`http://localhost:5173/garden/${plantId}`)
+            }
 
             if (!plantResponse.ok) {
                 console.error('Error:', plantResult);
@@ -176,7 +211,9 @@
                 </button>
             </div>
         {:else}
-            <p>Info relevante de la planta</p>
+            {#if loadState == true}
+                <Loader></Loader>
+            {/if}
         {/if}
         <canvas bind:this={canvasElement} style="display:none;"></canvas>
     </div>

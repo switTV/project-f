@@ -23,29 +23,26 @@ function fileToGenerativePart(path, mimeType) {
 
 export async function analyzeImageWithAI(photoPath, photoMimeType) {
     const prompt = process.env.INFO_PROMPT;
-	const token = process.env.BEARER_TOKEN;
     const imageParts = [fileToGenerativePart(photoPath, photoMimeType)];
-
-    console.log(`Examinando la imagen`);
-
 
     try {
         const result = await model.generateContent([prompt, ...imageParts]);
 
         const responseContent = result.response.candidates[0].content.parts[0].text; // AI text
+
         const plantData = JSON.parse(responseContent);
         console.log(plantData)
-
+        
         const validatedPlantData = {
             nombre_comun: plantData.nombre_comun || "Desconocido",
-            descripcion: plantData.descripción || "Sin descripción",
+            descripcion: plantData.descripcion || "Sin descripción",
             cuidados_especiales: plantData.cuidados_especiales || [],
             plagas: plantData.plagas || [],
             nativas: plantData.nativas || [],
             floracion: plantData.floracion || "Sin información",
         };
       
-        console.log('Planta publicada exitosamente:', validatedPlantData);
+        return {validatedPlantData, message: "Inspección completada exitosamente.",};
 
   	} catch (error) {
     	console.error('Error:', error.message || error);

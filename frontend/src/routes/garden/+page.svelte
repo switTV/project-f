@@ -28,21 +28,7 @@
 
     onMount(async () => {
         await fetchPlant();
-        console.log(plantData);
     });
-    // const fetchPlant = async () => {
-    //     const plantRequest = await fetch(
-    //         `http://localhost:3000/api/v1/plants/${userInfo._id}`,
-    //         {
-    //             method: "GET",
-    //             headers: {
-    //                 Authorization: `Bearer ${data.authToken}`,
-    //             },
-    //         },
-    //     );
-    //     let plantResponse = await plantRequest.json();
-    //     return plantResponse;
-    // };
     
 </script>
 

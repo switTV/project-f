@@ -2,6 +2,8 @@ import { Plant } from "../models/plant.model.js";
 import { User } from "../models/user.model.js";
 import { analyzeImageWithAI } from "../func/analyzePhotoWithAI.js";
 
+import { unlink } from "node:fs"
+
 
 export const getPlants = async(req, res) => {
     const plant = await Plant.find()
@@ -62,18 +64,26 @@ export const postPlant = async (req, res) => {
     }
 };
 
+function deletePlantImage(imagePath) {
+    unlink(`${imagePath}`, (err) => {
+        if (err) throw err;
+        console.log('plantImage was eliminated');
+    });              
+}
+
 export const deletePlant = async (req, res) => {
     try {
         const plantId = req.body.plantId;
         const userId = req.body.userId;
-  
-        const plant = await Plant.findByIdAndDelete(plantId);
+        
+        const plant = await Plant.findById(plantId);
       
         if (!plant) {
             return res.status(404).json({ message: 'Plant not found' });
         }
+
+        await Plant.findByIdAndDelete(plantId);
   
-        // Eliminar la referencia de la planta en el array userPlants del usuario
         const searchedUser = await User.findByIdAndUpdate(
             userId,
             { $pull: { userPlants: plantId } },
@@ -83,6 +93,7 @@ export const deletePlant = async (req, res) => {
         if (!searchedUser) {
             return res.status(404).json({ message: 'User not found' });
         }
+        deletePlantImage(plant.imageUrl)
   
         res.status(200).json({ message: 'Plant deleted and reference removed from user' });
     } catch (err) {
@@ -98,6 +109,7 @@ export const postPlantImage = async (req, res) => {
 
         const { plantId } = req.body;
 
+
         if (!plantId) {
             return res.status(400).json({ message: 'plantId es requerido' });
         }
@@ -109,7 +121,7 @@ export const postPlantImage = async (req, res) => {
             { 
                 imageUrl: req.file.path,
                 imageFilename: req.file.filename,
-                ...plantInfo,
+                ...plantInfo.validatedPlantData,
             },
             { new: true }
         );
@@ -139,7 +151,6 @@ export const postPlantImage = async (req, res) => {
 export const getPlantPhoto = async (req, res) => {
     const imagePath = `api/uploads/${req.params.plantPhotoId}`;
 
-    // Verifica que imagePath no esté vacío
     if (!imagePath) {
         return res.status(500).json({ message: 'AAAAAAAAAAAAAAAAAAAAAAAAAA' });
     }

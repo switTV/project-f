@@ -158,6 +158,8 @@
 
         {#if message}
             <p>{message}</p>
+            {:else}
+                <p>Forgot your password? <a href="#">Recover it here</a> <b>esto falta hacer che</b></p>    
         {/if}
         {#if showVerifyModule}
             <VerificationCode userData={{ mail }}></VerificationCode>

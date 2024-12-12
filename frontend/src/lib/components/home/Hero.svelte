@@ -55,6 +55,11 @@
         animation: fadeDown .4s ease 0s 1 normal forwards;
     }
 
+    p {
+        font-family: "Oxygen", sans-serif;
+        margin-top: 5px;
+    }
+
     .hero_text {
         width: 100%;
 
@@ -141,6 +146,7 @@
             <div class="hero_text_button">
                 <a href="/signup">Do it now!</a>
             </div>
+            <p>Already have an account? <a href="/signin">Log in</a></p>
         </div>
     </div>
 </div>
